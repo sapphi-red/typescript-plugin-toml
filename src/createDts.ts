@@ -16,7 +16,7 @@ export default data
 `
   } catch (e) {
     dts = `
-declare const data: never
+declare const data: void
 export default data
 `
   }
