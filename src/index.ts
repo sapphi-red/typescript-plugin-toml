@@ -79,6 +79,7 @@ function init({
           return {
             resolvedFileName: path.join(
               path.dirname(containingFile),
+              path.dirname(moduleName),
               path.basename(moduleName)
             ),
             extension: tsModule.Extension.Dts
