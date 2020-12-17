@@ -8,6 +8,13 @@ export const createDtsSnapshot = (
   logger: Logger
 ): ts.IScriptSnapshot => {
   const text = scriptSnapshot.getText(0, scriptSnapshot.getLength())
+
+  // Sometimes the generated dts are passed
+  // relates https://github.com/mrmckeb/typescript-plugin-css-modules/issues/41
+  if (text.includes('export default data')) {
+    return scriptSnapshot
+  }
+
   let dts
   try {
     const data = toml.parse(text)
