@@ -6,11 +6,19 @@ export const createDtsSnapshot = (
   scriptSnapshot: ts.IScriptSnapshot
 ): ts.IScriptSnapshot => {
   const text = scriptSnapshot.getText(0, scriptSnapshot.getLength())
-  const data = toml.parse(text)
+  let dts
+  try {
+    const data = toml.parse(text)
 
-  const dts = `
+    dts = `
 declare const data = ${JSON.stringify(data)} as const
 export default data
-  `
+`
+  } catch (e) {
+    dts = `
+declare const data = never
+export default data
+`
+  }
   return tsModule.ScriptSnapshot.fromString(dts)
 }
