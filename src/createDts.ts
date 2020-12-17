@@ -20,7 +20,7 @@ export const createDtsSnapshot = (
     const data = toml.parse(text)
 
     dts = `
-declare const data = ${JSON.stringify(data)} as const
+declare const data = ${JSON.stringify(data)}
 export default data
 `
   } catch (e) {
