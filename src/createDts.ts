@@ -5,7 +5,8 @@ import { Logger } from './logger'
 export const createDtsSnapshot = (
   tsModule: typeof ts,
   scriptSnapshot: ts.IScriptSnapshot,
-  logger: Logger
+  logger: Logger,
+  useAsConst: boolean
 ): ts.IScriptSnapshot => {
   const text = scriptSnapshot.getText(0, scriptSnapshot.getLength())
 
@@ -20,7 +21,7 @@ export const createDtsSnapshot = (
     const data = toml.parse(text)
 
     dts = `
-declare const data = ${JSON.stringify(data)}
+declare const data = ${JSON.stringify(data)}${useAsConst ? ' as const' : ''}
 export default data
 `
   } catch (e) {

@@ -20,3 +20,23 @@ And then add this to `tsconfig.json`.
 ```
 
 If you're using VSCode, [switch to workspace version](https://code.visualstudio.com/docs/typescript/typescript-compiling#_using-the-workspace-version-of-typescript).
+
+## `.const.toml`
+
+If the file name ends with `.const.toml`, the typings will become as if you are using `as const`.
+
+For example it will be like below.
+
+`test.toml` and `test.const.toml`
+```toml
+key = 'val'
+```
+
+`index.ts`
+```ts
+import test from './test.toml'
+import testConst from './test.const.toml'
+
+type Test = typeof test // { key: string }
+type TestConst = typeof testConst // { readonly key: 'val' }
+```

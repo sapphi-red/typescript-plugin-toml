@@ -1,7 +1,7 @@
 import type * as ts from 'typescript/lib/tsserverlibrary'
 import path from 'path'
 import { createDtsSnapshot } from './createDts'
-import { isToml } from './util'
+import { isToml, isConstToml } from './util'
 import { createLogger } from './logger'
 
 function init({
@@ -21,7 +21,12 @@ function init({
     ): ts.SourceFile => {
       if (isToml(fileName)) {
         logger.log(`create ${fileName}`)
-        scriptSnapshot = createDtsSnapshot(tsModule, scriptSnapshot, logger)
+        scriptSnapshot = createDtsSnapshot(
+          tsModule,
+          scriptSnapshot,
+          logger,
+          isConstToml(fileName)
+        )
       }
       const sourceFile = _createLanguageServiceSourceFile(
         fileName,
@@ -43,7 +48,12 @@ function init({
     ): ts.SourceFile => {
       if (isToml(sourceFile.fileName)) {
         logger.log(`update ${sourceFile.fileName}`)
-        scriptSnapshot = createDtsSnapshot(tsModule, scriptSnapshot, logger)
+        scriptSnapshot = createDtsSnapshot(
+          tsModule,
+          scriptSnapshot,
+          logger,
+          isConstToml(sourceFile.fileName)
+        )
       }
       sourceFile = _updateLanguageServiceSourceFile(
         sourceFile,
