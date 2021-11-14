@@ -1,19 +1,22 @@
 name: automatic deploy
+
 on:
   push:
     tags:
       - v*
+
 jobs:
   release:
     name: deploy
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: setup Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '16.x'
+          cache: npm
           registry-url: 'https://registry.npmjs.org'
       - name: ci
         run: npm ci
