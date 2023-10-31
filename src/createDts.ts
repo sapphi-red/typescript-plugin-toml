@@ -1,20 +1,15 @@
 import type ts from 'typescript/lib/tsserverlibrary'
 import toml from 'toml'
 import { Logger } from './logger'
+import { readFileSync } from 'fs'
 
 export const createDtsSnapshot = (
   tsModule: typeof ts,
-  scriptSnapshot: ts.IScriptSnapshot,
+  fileName: string,
   logger: Logger,
   useAsConst: boolean
 ): ts.IScriptSnapshot => {
-  const text = scriptSnapshot.getText(0, scriptSnapshot.getLength())
-
-  // Sometimes the generated dts are passed
-  // relates https://github.com/mrmckeb/typescript-plugin-css-modules/issues/41
-  if (text.includes('export default data')) {
-    return scriptSnapshot
-  }
+  const text = readFileSync(fileName, 'utf-8')
 
   let dts
   try {

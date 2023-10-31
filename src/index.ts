@@ -12,93 +12,71 @@ function init({
   const create = (info: ts.server.PluginCreateInfo) => {
     const logger = createLogger(info)
 
-    const _createLanguageServiceSourceFile =
-      tsModule.createLanguageServiceSourceFile
-    tsModule.createLanguageServiceSourceFile = (
-      fileName,
-      scriptSnapshot,
-      ...rest
-    ): ts.SourceFile => {
-      if (isToml(fileName)) {
-        logger.log(`create ${fileName}`)
-        scriptSnapshot = createDtsSnapshot(
-          tsModule,
-          scriptSnapshot,
-          logger,
-          isConstToml(fileName)
-        )
-      }
-      const sourceFile = _createLanguageServiceSourceFile(
-        fileName,
-        scriptSnapshot,
-        ...rest
-      )
-      if (isToml(fileName)) {
-        sourceFile.isDeclarationFile = true
-      }
-      return sourceFile
-    }
+    const languageServiceHost: Partial<ts.LanguageServiceHost> = {
+      getScriptKind(fileName) {
+        if (!info.languageServiceHost.getScriptKind) {
+          return tsModule.ScriptKind.Unknown
+        }
+        if (isToml(fileName)) return tsModule.ScriptKind.TS
+        return info.languageServiceHost.getScriptKind(fileName)
+      },
+      getScriptSnapshot(fileName) {
+        if (isToml(fileName)) {
+          return createDtsSnapshot(
+            tsModule,
+            fileName,
+            logger,
+            isConstToml(fileName)
+          )
+        }
+        return info.languageServiceHost.getScriptSnapshot(fileName)
+      },
+      resolveModuleNameLiterals(moduleNames, containingFile, ...rest) {
+        if (!info.languageServiceHost.resolveModuleNameLiterals) {
+          return []
+        }
 
-    const _updateLanguageServiceSourceFile =
-      tsModule.updateLanguageServiceSourceFile
-    tsModule.updateLanguageServiceSourceFile = (
-      sourceFile,
-      scriptSnapshot,
-      ...rest
-    ): ts.SourceFile => {
-      if (isToml(sourceFile.fileName)) {
-        logger.log(`update ${sourceFile.fileName}`)
-        scriptSnapshot = createDtsSnapshot(
-          tsModule,
-          scriptSnapshot,
-          logger,
-          isConstToml(sourceFile.fileName)
-        )
-      }
-      sourceFile = _updateLanguageServiceSourceFile(
-        sourceFile,
-        scriptSnapshot,
-        ...rest
-      )
-      if (isToml(sourceFile.fileName)) {
-        sourceFile.isDeclarationFile = true
-      }
-      return sourceFile
-    }
+        const resolvedModules =
+          info.languageServiceHost.resolveModuleNameLiterals(
+            moduleNames,
+            containingFile,
+            ...rest
+          )
 
-    if (info.languageServiceHost.resolveModuleNames) {
-      const _resolveModuleNames = info.languageServiceHost.resolveModuleNames.bind(
-        info.languageServiceHost
-      )
-      info.languageServiceHost.resolveModuleNames = (
-        moduleNames,
-        containingFile,
-        ...rest
-      ) => {
-        const resolvedModules = _resolveModuleNames(
-          moduleNames,
-          containingFile,
-          ...rest
-        )
-
-        return moduleNames.map((moduleName, i) => {
+        return moduleNames.map(({ text: moduleName }, i) => {
           if (!isToml(moduleName)) {
-            return resolvedModules[i]
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return resolvedModules[i]!
           }
 
           return {
-            resolvedFileName: path.join(
-              path.dirname(containingFile),
-              path.dirname(moduleName),
-              path.basename(moduleName)
-            ),
-            extension: tsModule.Extension.Dts
+            resolvedModule: {
+              resolvedFileName: path.join(
+                path.dirname(containingFile),
+                path.dirname(moduleName),
+                path.basename(moduleName)
+              ),
+              extension: tsModule.Extension.Dts,
+              isExternalLibraryImport: false
+            }
           }
         })
       }
     }
+    const languageServiceHostProxy = new Proxy(info.languageServiceHost, {
+      get(target, key: keyof ts.LanguageServiceHost) {
+        return languageServiceHost[key] ?? target[key]
+      }
+    })
+    const languageService = tsModule.createLanguageService(
+      languageServiceHostProxy
+    )
 
-    return info.languageService
+    if (info.languageServiceHost.resolveModuleNameLiterals) {
+      logger.log('resolveModuleNameLiterals not found')
+    }
+
+    return languageService
   }
 
   const getExternalFiles = (project: ts.server.ConfiguredProject) => {
