@@ -12,17 +12,19 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - name: setup pnpm
+        uses: pnpm/action-setup@v2
       - name: setup Node
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          cache: npm
+          node-version: '20.x'
+          cache: pnpm
           registry-url: 'https://registry.npmjs.org'
       - name: ci
-        run: npm ci
+        run: pnpm i
       - name: build
-        run: npm run build
+        run: pnpm run build
       - name: deploy
-        run: npm publish
+        run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

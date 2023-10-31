@@ -41,5 +41,6 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.2"
-  }
+  },
+  "packageManager": "pnpm@8.9.2"
 }
