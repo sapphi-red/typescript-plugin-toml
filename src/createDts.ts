@@ -19,8 +19,9 @@ export const createDtsSnapshot = (
 declare const data = ${JSON.stringify(data)}${useAsConst ? ' as const' : ''}
 export default data
 `
-  } catch (e) {
-    logger.error(e)
+  } catch (e: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    logger.error(e as any)
     dts = `
 declare const data: void
 export default data

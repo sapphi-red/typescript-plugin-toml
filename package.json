@@ -27,14 +27,14 @@
   },
   "homepage": "https://github.com/sapphi-red/typescript-plugin-toml#readme",
   "devDependencies": {
-    "@types/node": "^14.14.31",
-    "@typescript-eslint/eslint-plugin": "^5.3.1",
-    "@typescript-eslint/parser": "^5.3.1",
-    "eslint": "^8.2.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "prettier": "^2.4.1",
-    "typescript": "^5.0.2"
+    "@types/node": "^20.8.10",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.8",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
     "toml": "^3.0.0"
