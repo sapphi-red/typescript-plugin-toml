@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@volar/typescript": "^2.4.0",
-    "toml": "^3.0.0"
+    "toml-eslint-parser": "^0.10.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.2"

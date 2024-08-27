@@ -1,4 +1,4 @@
-import toml from 'toml'
+import { parseTOML, getStaticTOMLValue } from 'toml-eslint-parser'
 import { Logger } from './logger'
 import { readFileSync } from 'fs'
 
@@ -11,7 +11,8 @@ export const getDtsContent = (
 
   let dts
   try {
-    const data = toml.parse(text)
+    const parsed = parseTOML(text)
+    const data = getStaticTOMLValue(parsed)
 
     dts = `
 declare const data = ${JSON.stringify(data)}${useAsConst ? ' as const' : ''}
