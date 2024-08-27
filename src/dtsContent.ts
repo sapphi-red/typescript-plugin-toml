@@ -1,14 +1,12 @@
-import type ts from 'typescript/lib/tsserverlibrary'
 import toml from 'toml'
 import { Logger } from './logger'
 import { readFileSync } from 'fs'
 
-export const createDtsSnapshot = (
-  tsModule: typeof ts,
+export const getDtsContent = (
   fileName: string,
   logger: Logger,
   useAsConst: boolean
-): ts.IScriptSnapshot => {
+): string => {
   const text = readFileSync(fileName, 'utf-8')
 
   let dts
@@ -27,5 +25,5 @@ declare const data: void
 export default data
 `
   }
-  return tsModule.ScriptSnapshot.fromString(dts)
+  return dts
 }

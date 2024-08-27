@@ -1,89 +1,57 @@
-import type * as ts from 'typescript/lib/tsserverlibrary'
-import path from 'path'
-import { createDtsSnapshot } from './createDts'
+import { getDtsContent } from './dtsContent'
 import { isToml, isConstToml } from './util'
 import { createLogger } from './logger'
+import { createLanguageServicePlugin } from '@volar/typescript/lib/quickstart/createLanguageServicePlugin'
+import type { LanguagePlugin } from '@volar/language-core'
+import type {} from '@volar/typescript'
 
-function init({
-  typescript: tsModule
-}: {
-  typescript: typeof ts
-}): ts.server.PluginModule {
-  const create = (info: ts.server.PluginCreateInfo) => {
-    const logger = createLogger(info)
-
-    const languageServiceHost: Partial<ts.LanguageServiceHost> = {
-      getScriptKind(fileName) {
-        if (!info.languageServiceHost.getScriptKind) {
-          return tsModule.ScriptKind.Unknown
-        }
-        if (isToml(fileName)) return tsModule.ScriptKind.TS
-        return info.languageServiceHost.getScriptKind(fileName)
-      },
-      getScriptSnapshot(fileName) {
-        if (isToml(fileName)) {
-          return createDtsSnapshot(
-            tsModule,
-            fileName,
-            logger,
-            isConstToml(fileName)
-          )
-        }
-        return info.languageServiceHost.getScriptSnapshot(fileName)
-      },
-      resolveModuleNameLiterals(moduleNames, containingFile, ...rest) {
-        if (!info.languageServiceHost.resolveModuleNameLiterals) {
-          return []
-        }
-
-        const resolvedModules =
-          info.languageServiceHost.resolveModuleNameLiterals(
-            moduleNames,
-            containingFile,
-            ...rest
-          )
-
-        return moduleNames.map(({ text: moduleName }, i) => {
-          if (!isToml(moduleName)) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return resolvedModules[i]!
-          }
-
-          return {
-            resolvedModule: {
-              resolvedFileName: path.join(
-                path.dirname(containingFile),
-                path.dirname(moduleName),
-                path.basename(moduleName)
-              ),
-              extension: tsModule.Extension.Dts,
-              isExternalLibraryImport: false
-            }
-          }
-        })
-      }
-    }
-    const languageServiceHostProxy = new Proxy(info.languageServiceHost, {
-      get(target, key: keyof ts.LanguageServiceHost) {
-        return languageServiceHost[key] ?? target[key]
-      }
-    })
-    const languageService = tsModule.createLanguageService(
-      languageServiceHostProxy
-    )
-
-    if (info.languageServiceHost.resolveModuleNameLiterals) {
-      logger.log('resolveModuleNameLiterals not found')
-    }
-
-    return languageService
+export = createLanguageServicePlugin((ts, info) => {
+  const tsConfigPath = info.project.getProjectName()
+  if (!info.project.fileExists(tsConfigPath)) {
+    // project name not a tsconfig path, this is a inferred project
+    return { languagePlugins: [] }
   }
 
-  const getExternalFiles = (project: ts.server.ConfiguredProject) => {
-    return project.getFileNames().filter(name => isToml(name))
+  const logger = createLogger(info)
+
+  const plugin: LanguagePlugin<string> = {
+    getLanguageId(scriptId) {
+      if (isToml(scriptId)) {
+        return 'toml'
+      }
+    },
+    createVirtualCode(scriptId, languageId) {
+      if (languageId !== 'toml') return undefined
+
+      const fileName = scriptId.includes('://')
+        ? scriptId.split('://')[1] ?? ''
+        : scriptId
+
+      const dtsContent = getDtsContent(fileName, logger, isConstToml(fileName))
+      return {
+        id: 'main',
+        languageId: 'toml',
+        snapshot: {
+          getText: (start, end) => dtsContent.slice(start, end),
+          getLength: () => dtsContent.length,
+          getChangeRange: () => undefined
+        },
+        mappings: []
+      }
+    },
+    typescript: {
+      extraFileExtensions: [
+        {
+          extension: 'toml',
+          isMixedContent: true,
+          scriptKind: ts.ScriptKind.TS
+        }
+      ],
+      getServiceScript(root) {
+        return { code: root, extension: '.ts', scriptKind: ts.ScriptKind.TS }
+      }
+    }
   }
 
-  return { create, getExternalFiles }
-}
-
-export = init
+  return { languagePlugins: [plugin] }
+})
