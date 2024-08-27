@@ -24,7 +24,7 @@ export = createLanguageServicePlugin((ts, info) => {
       if (languageId !== 'toml') return undefined
 
       const fileName = scriptId.includes('://')
-        ? scriptId.split('://')[1] ?? ''
+        ? (scriptId.split('://')[1] ?? '')
         : scriptId
 
       const dtsContent = getDtsContent(fileName, logger, isConstToml(fileName))
